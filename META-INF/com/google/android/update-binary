@@ -1,0 +1,32 @@
+#!/sbin/sh
+# ============================================================================
+# Magisk Module Installer (update-binary)
+# Compatível com Magisk 20.4+
+#
+# NOTA: Quando instalado pelo app do Magisk, este arquivo é substituído
+# automaticamente pelo module_installer.sh oficial do Magisk.
+# Este stub existe apenas para compatibilidade com recovery (TWRP).
+# ============================================================================
+
+OUTFD=/proc/self/fd/$2
+ZIPFILE="$3"
+
+ui_print() {
+    echo -e "ui_print $1\nui_print" >> "$OUTFD"
+}
+
+ui_print "**************************************************"
+ui_print "*  Android Auto Systemizer v2.0                   *"
+ui_print "**************************************************"
+ui_print ""
+ui_print "! Este módulo deve ser instalado pelo app do"
+ui_print "! Magisk, KernelSU ou APatch."
+ui_print ""
+ui_print "! Instalação via Recovery NÃO é suportada pois"
+ui_print "! o script precisa acessar o APK instalado no"
+ui_print "! seu dispositivo em tempo de execução."
+ui_print ""
+ui_print "! Abra o app do seu gerenciador de root e"
+ui_print "! instale o módulo por lá."
+ui_print "**************************************************"
+exit 1

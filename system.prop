@@ -1,0 +1,8 @@
+# ============================================================================
+# Android Auto Systemizer - system.prop
+# Propriedades do sistema carregadas via resetprop
+# ============================================================================
+
+# NOTA: Nenhuma propriedade customizada é necessária para o Android Auto
+# funcionar como priv-app. As permissões privilegiadas do XML são suficientes.
+# Este arquivo está intencionalmente vazio para evitar conflitos.

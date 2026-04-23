@@ -1,0 +1,12 @@
+# ============================================================================
+# Android Auto Systemizer - sepolicy.rule
+# Regras SELinux adicionais para funcionamento do Android Auto como priv-app
+# Compatível com Magisk / KernelSU / KernelSU Next / APatch
+# ============================================================================
+
+# Permitir que o domínio priv_app acesse dispositivos USB (conexão com o carro)
+# Usa "allow" condicional — se o tipo não existir, a regra é ignorada silenciosamente
+allow priv_app usb_device:chr_file { read write open ioctl getattr }
+
+# Permitir que priv_app interaja com o sistema (necessário para projeção)
+allow priv_app system_server:binder { call transfer }
