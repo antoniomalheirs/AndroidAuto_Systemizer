@@ -1,7 +1,7 @@
-# 🚗 Android Auto Systemizer — Magisk / KernelSU / KernelSU Next Module
+# 🚗 Android Auto Systemizer v4.0
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.0-blueviolet?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/Version-4.0-blueviolet?style=for-the-badge" alt="Version"/>
   <img src="https://img.shields.io/badge/Android-9%20~%2016-brightgreen?style=for-the-badge" alt="Android"/>
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"/>
 </p>
@@ -14,152 +14,162 @@
 </p>
 
 <p align="center">
-  <b>A high-performance systemless module that converts Android Auto into a fully privileged system application with automotive projection capabilities.</b>
+  <b>Módulo systemless que converte o Android Auto em aplicativo de sistema privilegiado (priv-app) com suporte completo a projeção automotiva.</b>
 </p>
 
 <p align="center">
-  Systemless Install • Auto APK Extraction • Privileged Permissions • SELinux Compliant • Multi-Root Support
+  StubPrebuilt • RRO Overlay • 73 Permissões Privilegiadas • Anti-Bootloop • Multi-Root
 </p>
 
 ---
 
-## 📋 Table of Contents
+## 📋 Índice
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Compatibility](#-compatibility)
-- [Installation](#-installation)
-- [Architecture & Boot Lifecycle](#-architecture--boot-lifecycle)
-- [Script Details](#-script-details)
-- [Permissions](#-permissions)
-- [Project Structure](#-project-structure)
-- [OTA Updates](#-ota-updates)
+- [Visão Geral](#-visão-geral)
+- [Como Funciona](#-como-funciona)
+- [Componentes Instalados](#-componentes-instalados)
+- [Compatibilidade](#-compatibilidade)
+- [Instalação](#-instalação)
+- [Arquitetura e Ciclo de Boot](#-arquitetura-e-ciclo-de-boot)
+- [Permissões](#-permissões)
+- [Proteção Anti-Bootloop](#-proteção-anti-bootloop)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
 - [Troubleshooting](#-troubleshooting)
 - [Changelog](#-changelog)
-- [Credits](#-credits)
+- [Créditos](#-créditos)
 
 ---
 
-## 🔍 Overview
+## 🔍 Visão Geral
 
-**Android Auto Systemizer** is a root module that systemlessly converts the Android Auto application (`com.google.android.projection.gearhead`) from a regular user app into a **privileged system app** (`priv-app`).
+**Android Auto Systemizer** é um módulo root que instala de forma **systemless** o Android Auto (`com.google.android.projection.gearhead`) como **aplicativo de sistema privilegiado** (`priv-app`) na partição `/product/`.
 
-This is necessary because many Android Auto features — such as **automotive projection**, **USB accessory access**, **background location**, and **persistent foreground services** — require system-level privileges that are only available to apps installed in `/system/product/priv-app/`.
+### Por que systemizar o Android Auto?
 
-The module:
+Muitas funcionalidades do Android Auto — como **projeção automotiva**, **acesso USB privilegiado**, **localização em segundo plano** e **serviços foreground persistentes** — exigem permissões de nível de sistema que só estão disponíveis para apps instalados em `/product/priv-app/`.
 
-1. **Extracts** the installed Android Auto APK(s) automatically from the device
-2. **Installs** them systemlessly into `/system/product/priv-app/AndroidAuto/`
-3. **Configures** a comprehensive XML allowlist granting 40+ privileged permissions
-4. **Applies** custom SELinux policies for USB device access and binder communication
-5. **Grants** runtime (dangerous) permissions automatically on each boot
-6. **Registers** Android Auto as the system automotive projection handler
+### Abordagem Técnica
+
+O módulo utiliza a mesma abordagem do **NikGapps Addon**: instala o `AndroidAutoStubPrebuilt.apk` (APK stub oficial do Google) como app de sistema. Após a instalação e reinício, a **Google Play Store** detecta o stub e atualiza automaticamente para a versão completa do Android Auto, agora com todos os privilégios de sistema.
 
 ---
 
-## ✨ Features
+## ⚙️ Como Funciona
 
-| Feature | Description |
-| :--- | :--- |
-| 📦 **Auto APK Extraction** | Automatically extracts installed Android Auto APKs (including split APKs) via `pm path` |
-| 🔐 **Privileged Permissions** | Full XML allowlist with 40+ privileged permissions for system-level access |
-| 🛡️ **SELinux Compliant** | Custom SEPolicy rules for USB device access and binder IPC |
-| 🔑 **Runtime Permission Grant** | Automatically grants 12 dangerous permissions (location, phone, contacts, bluetooth, etc.) on boot |
-| 🚗 **Automotive Projection Role** | Registers Android Auto as `SYSTEM_AUTOMOTIVE_PROJECTION` role holder |
-| 🔄 **Split APK Support** | Full support for Android App Bundles with multiple split APKs |
-| 📁 **Fallback APK Input** | Users can manually include APKs in the ZIP if Android Auto is not yet installed |
-| 🔒 **Post-Mount Verification** | Validates OverlayFS mount on KernelSU/KSU Next after boot |
-| 🧹 **Clean Uninstall** | Clears Android Auto cache on removal to prevent conflicts |
-| 🔁 **Auto-Update** | In-app update support via `updateJson` for all root managers |
+```mermaid
+graph LR
+    A["📦 Flash Módulo"] --> B["🔄 Reinicia"]
+    B --> C["📱 Stub vira system app"]
+    C --> D["🏪 Play Store atualiza"]
+    D --> E["🚗 Android Auto completo com privilégios de sistema"]
+
+    style A fill:#1a1a2e,stroke:#e94560,color:#fff
+    style B fill:#16213e,stroke:#533483,color:#fff
+    style C fill:#0f3460,stroke:#00b4d8,color:#fff
+    style D fill:#1a1a2e,stroke:#e94560,color:#fff
+    style E fill:#16213e,stroke:#00b4d8,color:#fff
+```
+
+1. O módulo monta 3 arquivos via overlay systemless na partição `/product/`
+2. O Android reconhece o `AndroidAutoStubPrebuilt` como app de sistema privilegiado
+3. O XML de permissões concede 73 permissões privilegiadas automaticamente
+4. O overlay RRO configura recursos do sistema para o Android Auto
+5. A Play Store detecta o stub e oferece a atualização para a versão completa
+6. Scripts de boot concedem permissões runtime e registram o role de projeção
 
 ---
 
-## 🔧 Compatibility
+## 📦 Componentes Instalados
 
-### Root Solutions
+O módulo instala **3 componentes** idênticos ao NikGapps AndroidAuto Addon:
 
-| Platform | Version | Status |
-| :--- | :--- | :--- |
-| **Magisk** | 20.0+ | ✅ Full Support |
-| **KernelSU** | All | ✅ Full Support (requires metamodule) |
-| **KernelSU Next** | 20000+ | ✅ Full Support (requires metamodule) |
-| **APatch** | All | ✅ Full Support |
-
-### Android Versions
-
-| Android | API | Status | Notes |
+| Componente | Caminho no Sistema | Tamanho | Função |
 | :--- | :--- | :--- | :--- |
-| Android 9 | API 28 | ✅ | Minimum supported version |
-| Android 10 | API 29 | ✅ | — |
-| Android 11 | API 30 | ✅ | — |
-| Android 12 | API 31 | ✅ | — |
-| Android 12L | API 32 | ✅ | — |
-| Android 13 | API 33 | ✅ | — |
-| Android 14 | API 34 | ✅ | — |
-| Android 15 | API 35 | ✅ | — |
-| Android 16 | API 36 | ✅ | — |
-
-### Tested ROMs
-
-Works on AOSP, Pixel, LineageOS, crDroid, EvolutionX, AxionOS, MIUI, HyperOS, OneUI, OxygenOS, ColorOS, and more.
-
-> [!IMPORTANT]
-> **KernelSU / KernelSU Next users:** You **MUST** install a metamodule (e.g., `meta-overlayfs`) for the module to mount files into `/system/`. The installer will warn you if none is detected.
-
----
-
-## 🚀 Installation
-
-1. **Install Android Auto** from the [Google Play Store](https://play.google.com/store/apps/details?id=com.google.android.projection.gearhead) (if not already installed)
-2. Download the latest `AndroidAuto_Systemizer.zip` from [Releases](https://github.com/antoniomalheirs/AndroidAuto_Systemizer/releases)
-3. Open your root manager (**Magisk Manager**, **KernelSU Manager**, or **APatch**)
-4. Flash the `.zip` via the **Modules** → **Install from storage** option
-5. **Reboot** your device
-6. (Optional) Uninstall the Play Store version of Android Auto — the system version takes priority
-7. Connect to your car and enjoy! 🎉
+| **AndroidAutoStubPrebuilt.apk** | `/product/priv-app/AndroidAutoStubPrebuilt/` | 3.7 MB | APK stub oficial do Google — placeholder que a Play Store atualiza para a versão completa |
+| **AndroidAutoOverlay.apk** | `/product/overlay/` | 12.3 KB | Runtime Resource Overlay (RRO) — configura o sistema para reconhecer o Android Auto como app nativo |
+| **com.google.android.projection.gearhead.xml** | `/product/etc/permissions/` | 5.3 KB | Allowlist AOSP com 73 permissões privilegiadas |
 
 > [!NOTE]
-> The module automatically extracts Android Auto's APK(s) during installation. You do **not** need to manually place any APK files. If Android Auto is not installed, the installer will provide instructions.
-
-> [!TIP]
-> After rebooting, you can verify the systemization worked by checking: **Settings → Apps → Android Auto → App Info** — it should show as a **System App**.
+> Todos os 3 arquivos são **byte-a-byte idênticos** ao NikGapps Addon (SHA256 verificado). A única diferença é o método de instalação: NikGapps escreve direto na partição, nosso módulo usa overlay systemless.
 
 ---
 
-## 🏗️ Architecture & Boot Lifecycle
+## 🔧 Compatibilidade
 
-The module uses a multi-stage boot pipeline to ensure Android Auto gains full system privileges across all root solutions:
+### Soluções Root
+
+| Plataforma | Versão | Status |
+| :--- | :--- | :--- |
+| **Magisk** | 20.0+ | ✅ Suporte Completo |
+| **KernelSU** | Todas | ✅ Suporte Completo |
+| **KernelSU Next** | 20000+ | ✅ Suporte Completo |
+| **APatch** | Todas | ✅ Suporte Completo |
+
+### Versões Android
+
+| Android | API | Status |
+| :--- | :--- | :--- |
+| Android 9 (Pie) | API 28 | ✅ |
+| Android 10 – 13 | API 29–33 | ✅ |
+| Android 14 | API 34 | ✅ |
+| Android 15 | API 35 | ✅ |
+| Android 16 | API 36 | ✅ |
+
+### ROMs Testadas
+
+AOSP, Pixel, LineageOS, crDroid, EvolutionX, AxionOS, MIUI, HyperOS, OneUI, OxygenOS, ColorOS e outras.
+
+> [!IMPORTANT]
+> **KernelSU / KernelSU Next:** É necessário instalar um metamódulo (ex: `meta-overlayfs`) para que o módulo monte arquivos em `/system/`.
+
+---
+
+## 🚀 Instalação
+
+1. Baixe o `AndroidAuto_Systemizer.zip` dos [Releases](https://github.com/antoniomalheirs/AndroidAuto_Systemizer/releases)
+2. Abra seu gerenciador root (**Magisk**, **KernelSU** ou **APatch**)
+3. Vá em **Módulos** → **Instalar do armazenamento** → selecione o ZIP
+4. **Reinicie** o dispositivo
+5. Abra a **Play Store** → busque **Android Auto** → **Atualizar** (o stub será atualizado para a versão completa)
+6. Conecte ao carro e aproveite! 🎉
+
+> [!TIP]
+> Após reiniciar, verifique se funcionou: abra um terminal/ADB e execute:
+> ```bash
+> pm list packages -s | grep gearhead
+> ```
+> Se retornar `package:com.google.android.projection.gearhead`, o Android Auto é um app de sistema ✅
+
+---
+
+## 🏗️ Arquitetura e Ciclo de Boot
 
 ```mermaid
 graph TD
-    subgraph INSTALL["📥 Installation (customize.sh)"]
-        I1[Detect Root Environment] --> I2[Check Android API ≥ 28]
-        I2 --> I3["Extract APKs via pm path"]
-        I3 --> I4["Copy to /product/priv-app/AndroidAuto/"]
-        I4 --> I5["Deploy privapp-permissions XML"]
-        I5 --> I6["Set SELinux Contexts"]
-        I6 --> I7["Apply File Permissions"]
+    subgraph INSTALL["📥 Instalação — customize.sh"]
+        I1[Detectar Root Manager] --> I2[Verificar API ≥ 28]
+        I2 --> I3["Validar StubPrebuilt.apk"]
+        I3 --> I4["Montar em /product/priv-app/"]
+        I4 --> I5["Aplicar permissões 0755/0644"]
     end
 
-    subgraph BOOT1["📁 post-mount.sh (After OverlayFS)"]
-        B1["Verify overlay mount"] --> B2["Log mount status"]
+    subgraph BOOT1["📁 post-mount.sh"]
+        B1["Verificar overlay"] --> B2["Log de status"]
     end
 
-    subgraph BOOT2["⚙️ service.sh (Late Start)"]
-        B3["Wait for boot_completed"] --> B4["Wait 10s for stability"]
-        B4 --> B5["Verify system app status"]
-        B5 --> B6["Grant 12 runtime permissions"]
-        B6 --> B7["Set AUTOMOTIVE_PROJECTION role"]
+    subgraph BOOT2["⚙️ service.sh — Late Start"]
+        B3["Aguardar boot completo"] --> B4["Esperar 10s"]
+        B4 --> B5["Verificar system app"]
+        B5 --> B6["Conceder 16 permissões runtime"]
+        B6 --> B7["Registrar role AUTOMOTIVE_PROJECTION"]
     end
 
-    subgraph BOOT3["✅ boot-completed.sh (KSU/APatch)"]
-        B8["Wait 5s for stability"] --> B9["Grant runtime permissions"]
-        B9 --> B10["Set AUTOMOTIVE_PROJECTION role"]
+    subgraph BOOT3["✅ boot-completed.sh — KSU/APatch"]
+        B8["Esperar 5s"] --> B9["Conceder permissões"]
+        B9 --> B10["Registrar role"]
     end
 
-    INSTALL --> BOOT1
-    BOOT1 --> BOOT2
-    BOOT2 --> BOOT3
+    INSTALL --> BOOT1 --> BOOT2 --> BOOT3
 
     style INSTALL fill:#1a1a2e,stroke:#e94560,color:#fff
     style BOOT1 fill:#16213e,stroke:#533483,color:#fff
@@ -167,205 +177,183 @@ graph TD
     style BOOT3 fill:#0f3460,stroke:#00b4d8,color:#fff
 ```
 
-### Why Multiple Stages?
+### Scripts do Módulo
 
-| Stage | Timing | Purpose |
+| Script | Quando Executa | O Que Faz |
 | :--- | :--- | :--- |
-| `customize.sh` | During flash | Extract APKs, deploy permissions, set file contexts |
-| `post-mount.sh` | After OverlayFS mount | Verify overlay mounted correctly (KSU/APatch) |
-| `service.sh` | Late start (boot completed) | Grant runtime permissions, set projection role |
-| `boot-completed.sh` | After `sys.boot_completed=1` (KSU/APatch) | Re-apply permissions via native KSU hook |
+| `customize.sh` | Durante instalação | Valida componentes, configura permissões de arquivos |
+| `post-mount.sh` | Após mount do overlay | Verifica montagem do OverlayFS (KSU/APatch) |
+| `service.sh` | Late start service | Concede permissões runtime, registra role de projeção automotiva |
+| `boot-completed.sh` | Após boot completo | Hook nativo KSU/APatch — redundância para permissões |
+| `uninstall.sh` | Na remoção do módulo | Limpa cache do Android Auto |
+| `system.prop` | No boot | Define `ro.control_privapp_permissions=log` (anti-bootloop) |
+| `sepolicy.rule` | No boot | Políticas SELinux para acesso USB e binder IPC |
 
 ---
 
-## 📜 Script Details
+## 🔑 Permissões
 
-### `customize.sh` — Installation Engine
+### 73 Permissões Privilegiadas (XML Allowlist)
 
-The installation script adapts to the device environment:
-
-- **Root Detection:** Identifies Magisk, KernelSU, KernelSU Next, or APatch with version logging
-- **API Validation:** Enforces minimum Android 9 (API 28) requirement
-- **APK Extraction:** Uses `pm path` to locate and copy all Android Auto APKs (base + splits)
-- **Fallback Support:** If Android Auto is not installed, checks for manually included APKs in the ZIP
-- **Permission Deployment:** Copies the privileged permissions XML to `/system/product/etc/permissions/`
-- **SELinux Enforcement:** Applies correct file contexts via `set_perm_recursive`
-
-### `post-mount.sh` — Overlay Verification (KSU/APatch)
-
-Runs AFTER OverlayFS/MagicMount has mounted module files.
-
-- Validates that `/system/product/priv-app/AndroidAuto/` is mounted and accessible
-- Logs mount status for debugging
-
-### `service.sh` — Late Start Service (Universal)
-
-The main runtime script. Waits for `sys.boot_completed=1` + 10s stabilization before executing.
-
-- **System App Verification:** Checks if Android Auto is recognized as a system package via `pm list packages -s`
-- **Runtime Permission Grant:** Grants 12 dangerous permissions that cannot be declared in XML allowlists
-- **Projection Role:** Registers Android Auto as `SYSTEM_AUTOMOTIVE_PROJECTION` via `cmd role`
-- **Logging:** All actions logged via Android's `log` system with tag `AndroidAutoSystemizer`
-
-### `boot-completed.sh` — Post-Boot Hook (KSU/APatch)
-
-KernelSU and APatch support this hook natively. Provides a redundant path for permission granting.
-
-- Re-applies all 12 runtime permissions
-- Re-registers the automotive projection role
-- Ensures permissions persist even if `service.sh` runs too early
-
-### `sepolicy.rule` — SELinux Policy
-
-Custom SEPolicy rules that allow:
-
-- `priv_app` domain to access USB character devices (`chr_file { read write open ioctl getattr }`) — required for wired car connections
-- `priv_app` domain to communicate with `system_server` via binder IPC — required for projection services
-
-### `system.prop` — System Properties
-
-Intentionally empty. Android Auto's privileged functionality relies on XML permission allowlisting and runtime grants, not custom system properties.
-
-### `uninstall.sh` — Clean Removal
-
-Clears Android Auto's cache and data on module removal to prevent conflicts when reverting to the user-space version.
-
----
-
-## 🔑 Permissions
-
-### Privileged Permissions (XML Allowlist)
-
-The module deploys a comprehensive `privapp-permissions` XML that grants Android Auto access to system-level APIs:
+O módulo instala um allowlist AOSP completo em `/product/etc/permissions/` com **73 permissões**, incluindo:
 
 <details>
-<summary><b>Full Permission List (40+ permissions)</b></summary>
+<summary><b>Ver lista completa de permissões</b></summary>
 
-| Category | Permission | Purpose |
+| Categoria | Permissão | Função |
 | :--- | :--- | :--- |
-| 📍 Location | `ACCESS_FINE_LOCATION` | GPS for navigation |
-| 📍 Location | `ACCESS_COARSE_LOCATION` | Network location |
-| 📍 Location | `ACCESS_BACKGROUND_LOCATION` | Navigation while screen off |
-| 📞 Phone | `READ_PHONE_STATE` | Call state detection |
-| 📞 Phone | `CALL_PHONE` | Hands-free calling |
-| 📞 Phone | `READ_PHONE_NUMBERS` | Caller ID display |
-| 📇 Contacts | `READ_CONTACTS` | Contact sync to car display |
-| 🎙️ Audio | `RECORD_AUDIO` | Voice commands / Google Assistant |
-| 🔔 Notifications | `POST_NOTIFICATIONS` | Android 13+ notification permission |
-| 📶 Bluetooth | `BLUETOOTH_CONNECT` | Android 12+ BT connection |
-| 📶 Bluetooth | `BLUETOOTH_SCAN` | Android 12+ BT discovery |
-| 📡 WiFi | `NEARBY_WIFI_DEVICES` | Wireless Android Auto |
+| 🔵 Bluetooth | `BLUETOOTH_PRIVILEGED` | Pareamento privilegiado |
+| 🔵 Bluetooth | `BLUETOOTH_CONNECT` / `BLUETOOTH_SCAN` | Conexão e descoberta BT |
+| 📍 Localização | `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` | Navegação GPS |
+| 📍 Localização | `LOCATION_HARDWARE` | Acesso direto ao hardware GPS |
+| 📞 Telefonia | `MODIFY_PHONE_STATE` / `READ_PRIVILEGED_PHONE_STATE` | Controle de chamadas |
+| 📞 Telefonia | `CALL_PRIVILEGED` / `CONTROL_INCALL_EXPERIENCE` | Chamadas privilegiadas |
+| 📞 Telefonia | `REGISTER_CALL_PROVIDER` | Provedor de chamadas |
+| 🚗 Projeção | `TOGGLE_AUTOMOTIVE_PROJECTION` | Ativar projeção automotiva |
+| 🚗 Projeção | `ENTER_CAR_MODE_PRIORITIZED` | Modo carro priorizado |
+| 🚗 Projeção | `REQUEST_COMPANION_PROFILE_AUTOMOTIVE_PROJECTION` | Perfil companion automotivo |
+| 🔌 USB | `MANAGE_USB` | Gerenciar dispositivos USB |
+| 🔊 Áudio | `MODIFY_AUDIO_ROUTING` | Roteamento de áudio privilegiado |
+| 👤 Usuários | `INTERACT_ACROSS_PROFILES` / `MANAGE_USERS` | Interação multi-perfil |
+| 🖥️ Display | `ADD_TRUSTED_DISPLAY` / `ADD_ALWAYS_UNLOCKED_DISPLAY` | Displays virtuais confiáveis |
+| 🖥️ Display | `CREATE_VIRTUAL_DEVICE` / `CAPTURE_SECURE_VIDEO_OUTPUT` | Dispositivo virtual e captura |
+| 📊 Sistema | `DUMP` / `UPDATE_APP_OPS_STATS` | Diagnóstico e estatísticas |
+| 📊 Sistema | `START_ACTIVITIES_FROM_BACKGROUND` | Atividades em background |
+| 📊 Sistema | `WRITE_SETTINGS` / `WRITE_SECURE_SETTINGS` | Configurações do sistema |
+| 📊 Sistema | `CHANGE_COMPONENT_ENABLED_STATE` | Gerenciar componentes |
+| 🌐 Rede | `TETHER_PRIVILEGED` | Tethering privilegiado |
+| 🌐 Rede | `COMPANION_APPROVE_WIFI_CONNECTIONS` | Conexões WiFi companion |
+| 🌐 Rede | `LOCAL_MAC_ADDRESS` | Endereço MAC local |
+| 🔋 Energia | `POWER_SAVER` | Controle de economia de energia |
+| 📱 Apps | `QUERY_ALL_PACKAGES` | Consultar todos os pacotes |
+| 📱 Apps | `MANAGE_EXTERNAL_STORAGE` | Armazenamento externo |
+| 🔔 Notificações | `RECEIVE_SENSITIVE_NOTIFICATIONS` | Notificações sensíveis |
+| 📬 SMS | `SEND_SMS` / `RECEIVE_SMS` | Mensagens via carro |
+| + | *e mais 20 permissões adicionais* | Funcionalidade completa |
 
 </details>
 
-### Runtime Permissions (Granted on Boot)
+### 16 Permissões Runtime (Concedidas no Boot)
 
-The 12 dangerous permissions listed above are also granted automatically via `pm grant` in `service.sh` and `boot-completed.sh` to ensure zero-touch configuration.
+Permissões do tipo "dangerous" que são concedidas automaticamente via `pm grant` em cada boot:
+
+```
+ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, ACCESS_BACKGROUND_LOCATION,
+READ_PHONE_STATE, CALL_PHONE, READ_CONTACTS, RECORD_AUDIO,
+POST_NOTIFICATIONS, BLUETOOTH_CONNECT, BLUETOOTH_SCAN,
+NEARBY_WIFI_DEVICES, READ_CALENDAR, READ_CALL_LOG, SEND_SMS, RECEIVE_SMS
+```
 
 ---
 
-## 📂 Project Structure
+## 🛡️ Proteção Anti-Bootloop
+
+O módulo implementa **3 camadas de proteção** contra bootloop:
+
+### Camada 1: Propriedade de Sistema
+
+```properties
+ro.control_privapp_permissions=log
+```
+
+Quando definida como `log`, o Android **registra** erros de permissão no logcat em vez de **crashar** o `system_server`. Isso significa que mesmo que uma permissão do XML não exista na sua ROM específica, o dispositivo **sempre** inicializa normalmente.
+
+> Referência: [source.android.com/docs/core/permissions/perms-allowlist](https://source.android.com/docs/core/permissions/perms-allowlist)
+
+### Camada 2: Instalação Systemless
+
+O módulo **NÃO** modifica nenhum arquivo real do sistema. Todos os arquivos são montados via overlay do Magisk/KSU. Se algo der errado:
+
+- **Magisk:** Segure Volume Down por 30s durante o boot → módulos desativados
+- **KSU/APatch:** Remova `/data/adb/modules/androidauto-systemizer/` via recovery
+- **Qualquer root:** Desative o módulo no gerenciador root
+
+### Camada 3: Scripts Defensivos
+
+Todos os scripts usam `2>/dev/null` em cada comando. Nenhum erro de script pode afetar o processo de boot.
+
+---
+
+## 📂 Estrutura do Projeto
 
 ```
 AndroidAuto_Systemizer/
-├── META-INF/                          # Flashable ZIP metadata
-│   └── com/google/android/
-│       ├── update-binary             # Magisk module installer
-│       └── updater-script            # Required (empty marker)
+├── system/product/
+│   ├── priv-app/AndroidAutoStubPrebuilt/
+│   │   └── AndroidAutoStubPrebuilt.apk    # APK stub oficial Google (3.7 MB)
+│   ├── overlay/
+│   │   └── AndroidAutoOverlay.apk         # RRO overlay (12.3 KB)
+│   └── etc/permissions/
+│       └── com.google.android.projection.gearhead.xml  # 73 permissões
 │
-├── system/
-│   ├── etc/
-│   │   └── permissions/              # Fallback permission path
-│   │       └── privapp-permissions-com.google.android.projection.gearhead.xml
-│   │
-│   └── product/
-│       ├── etc/
-│       │   └── permissions/          # Primary permission path
-│       │       └── privapp-permissions-com.google.android.projection.gearhead.xml
-│       │
-│       └── priv-app/
-│           └── AndroidAuto/          # APK destination (populated at install time)
-│               └── base.apk          # Extracted automatically from device
-│
-├── update_metada/
-│   ├── update.json                   # OTA update manifest
-│   └── CHANGELOG.md                  # Full version history
-│
-├── customize.sh                      # Installation script
-├── post-mount.sh                     # Post-mount overlay verification (KSU/APatch)
-├── service.sh                        # Late start service (universal)
-├── boot-completed.sh                 # Post-boot hook (KSU/APatch)
-├── sepolicy.rule                     # Custom SELinux policies
-├── system.prop                       # System properties (intentionally empty)
-├── uninstall.sh                      # Cleanup on removal
-└── module.prop                       # Module metadata + updateJson
+├── customize.sh          # Script de instalação
+├── service.sh            # Permissões runtime (Magisk)
+├── boot-completed.sh     # Permissões runtime (KSU/APatch)
+├── post-mount.sh         # Verificação de overlay
+├── uninstall.sh          # Limpeza na remoção
+├── module.prop           # Metadados do módulo
+├── system.prop           # ro.control_privapp_permissions=log
+├── sepolicy.rule         # Políticas SELinux
+└── update_metada/
+    ├── update.json       # Manifesto de atualização OTA
+    └── CHANGELOG.md      # Histórico de versões
 ```
-
----
-
-## 🔄 OTA Updates
-
-The module supports in-app updates via the `updateJson` mechanism. Your root manager will automatically check for new versions.
-
-**Update URL:** `https://raw.githubusercontent.com/antoniomalheirs/AndroidAuto_Systemizer/main/update_metada/update.json`
 
 ---
 
 ## 🔧 Troubleshooting
 
 <details>
-<summary><b>Android Auto still shows as "user app" after reboot</b></summary>
+<summary><b>Android Auto não aparece como app de sistema</b></summary>
 
-1. Open a terminal (or ADB shell) and run: `pm list packages -s | grep gearhead`
-2. If empty, the module is not mounting correctly — check your root manager logs
-3. For KernelSU users: ensure you have a metamodule installed (e.g., `meta-overlayfs`)
-4. Try re-flashing the module and rebooting
-
-</details>
-
-<details>
-<summary><b>"App not installed as system app" error when connecting to car</b></summary>
-
-1. Uninstall the Play Store version of Android Auto: **Settings → Apps → Android Auto → Uninstall**
-2. The system version (from the module) should now take priority
-3. Reboot and try connecting again
+1. Execute: `pm list packages -s | grep gearhead`
+2. Se vazio: verifique os logs do gerenciador root
+3. **KernelSU:** instale um metamódulo (`meta-overlayfs`)
+4. Reinstale o módulo e reinicie
 
 </details>
 
 <details>
-<summary><b>USB connection to car not working</b></summary>
+<summary><b>"Dispositivo não compatível" na Play Store</b></summary>
 
-1. Check SELinux status: run `getenforce` — it should be `Enforcing`
-2. The module's `sepolicy.rule` adds USB device access for `priv_app` domain
-3. Try a different USB cable (must support data transfer, not charge-only)
-4. Check `logcat -s AndroidAutoSystemizer` for error messages
+Isso é causado pelo **Play Integrity API** (detecção de root), não pelo módulo. Instale um módulo de **Play Integrity Fix (PIF)** separadamente.
 
 </details>
 
 <details>
-<summary><b>Wireless Android Auto not connecting</b></summary>
+<summary><b>Play Store não oferece atualização do Android Auto</b></summary>
 
-1. Verify Bluetooth and WiFi permissions were granted: `dumpsys package com.google.android.projection.gearhead | grep BLUETOOTH`
-2. The module grants `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN`, and `NEARBY_WIFI_DEVICES` on boot
-3. Clear Android Auto data and re-pair with the car
-
-</details>
-
-<details>
-<summary><b>KernelSU: Nothing is working</b></summary>
-
-1. **You MUST install a metamodule** (e.g., `meta-overlayfs`) for KernelSU to mount files into `/system/`
-2. Install `meta-overlayfs` → Reboot → Re-flash this module → Reboot again
-3. Check if the module is enabled in KernelSU Manager
+1. Abra a Play Store → busque "Android Auto" manualmente
+2. Se não aparecer, limpe o cache da Play Store
+3. Aguarde algumas horas — a Play Store pode demorar para detectar o stub
 
 </details>
 
 <details>
-<summary><b>Permissions not being granted automatically</b></summary>
+<summary><b>Conexão USB com o carro não funciona</b></summary>
 
-1. Check `logcat -s AndroidAutoSystemizer` — you should see "Permissões runtime concedidas"
-2. Manually grant from: **Settings → Apps → Android Auto → Permissions**
-3. If `service.sh` fails, `boot-completed.sh` serves as a fallback (KSU/APatch)
+1. Verifique SELinux: `getenforce` → deve ser `Enforcing`
+2. O módulo adiciona acesso USB via `sepolicy.rule`
+3. Use um cabo USB de dados (não apenas carregamento)
+4. Verifique logs: `logcat -s AndroidAutoSystemizer`
+
+</details>
+
+<details>
+<summary><b>Wireless Android Auto não conecta</b></summary>
+
+1. Verifique permissões BT: `dumpsys package com.google.android.projection.gearhead | grep BLUETOOTH`
+2. O módulo concede `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN` e `NEARBY_WIFI_DEVICES` no boot
+3. Limpe dados do Android Auto e re-pareie com o carro
+
+</details>
+
+<details>
+<summary><b>KernelSU: módulo não funciona</b></summary>
+
+1. Instale um metamódulo (`meta-overlayfs`) → Reinicie → Reinstale este módulo → Reinicie
+2. Verifique se o módulo está ativado no KernelSU Manager
+3. Verifique se o UID do módulo tem permissão de root
 
 </details>
 
@@ -373,27 +361,50 @@ The module supports in-app updates via the `updateJson` mechanism. Your root man
 
 ## 📝 Changelog
 
-See the full changelog at [`update_metada/CHANGELOG.md`](update_metada/CHANGELOG.md).
+### v4.0 — Rewrite com StubPrebuilt (Atual)
 
-### Latest: v2.0
+- **Nova abordagem:** Usa `AndroidAutoStubPrebuilt.apk` (stub oficial Google) em vez de extrair APKs split
+- **RRO Overlay:** Inclui `AndroidAutoOverlay.apk` para configuração nativa do sistema
+- **73 permissões:** Allowlist completa baseada no NikGapps Addon (vs. 22 da v3.0)
+- **Compatibilidade:** Arquivos idênticos ao NikGapps Addon (SHA256 verificado)
+- **16 permissões runtime:** Adicionadas `READ_CALENDAR`, `READ_CALL_LOG`, `SEND_SMS`, `RECEIVE_SMS`
 
-- **Universal root manager support:** Magisk, KernelSU, KernelSU Next & APatch
-- **Auto APK extraction:** Extracts installed Android Auto via `pm path` (supports split APKs)
-- **Privileged permissions:** Comprehensive XML allowlist with 40+ permissions
-- **SELinux policies:** USB device access and binder IPC for automotive projection
-- **Runtime permission grant:** 12 dangerous permissions granted automatically on boot
-- **Automotive projection role:** Auto-registers as `SYSTEM_AUTOMOTIVE_PROJECTION`
-- **Clean uninstall:** Cache cleared on module removal
+### v3.0 — Rewrite de Segurança
+
+- Remoção de XMLs duplicados entre partições
+- Proteção anti-bootloop via `ro.control_privapp_permissions=log`
+- Scripts 100% defensivos com supressão de erros
+- Remoção de regras SELinux redundantes
+
+### v2.0 — Multi-Root
+
+- Suporte a Magisk, KernelSU, KernelSU Next e APatch
+- Extração automática de APKs via `pm path`
+- Concessão automática de permissões runtime
+
+### v1.0 — Release Inicial
+
+- Instalação básica do Android Auto como priv-app
+- Suporte apenas para Magisk
 
 ---
 
-## 👏 Credits
+## 🔄 Atualização OTA
 
-| Contributor | Contribution |
+O módulo suporta atualização automática via `updateJson`. Seu gerenciador root verificará automaticamente novas versões.
+
+**URL:** `https://raw.githubusercontent.com/antoniomalheirs/AndroidAuto_Systemizer/main/update_metada/update.json`
+
+---
+
+## 👏 Créditos
+
+| Contribuidor | Contribuição |
 | :--- | :--- |
-| [**topjohnwu**](https://github.com/topjohnwu) | Creator of Magisk |
-| [**tiann**](https://github.com/tiann) | Creator of KernelSU |
-| [**SentinelData**](https://github.com/antoniomalheirs) | Module development |
+| [**topjohnwu**](https://github.com/topjohnwu) | Criador do Magisk |
+| [**tiann**](https://github.com/tiann) | Criador do KernelSU |
+| [**NikGapps**](https://nikgapps.com/) | Referência para a abordagem StubPrebuilt + Overlay |
+| [**SentinelData**](https://github.com/antoniomalheirs) | Desenvolvimento do módulo |
 
 ---
 
@@ -403,5 +414,5 @@ See the full changelog at [`update_metada/CHANGELOG.md`](update_metada/CHANGELOG
 </p>
 
 <p align="center">
-  ⭐ If this module improved your Android Auto experience, consider giving the repo a star!
+  ⭐ Se este módulo melhorou sua experiência com o Android Auto, considere dar uma estrela no repositório!
 </p>

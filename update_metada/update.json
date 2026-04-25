@@ -1,6 +1,6 @@
 {
-    "version": "v2.0",
-    "versionCode": 20,
-    "zipUrl": "https://github.com/antoniomalheirs/AndroidAuto_Systemizer/releases/download/V2.0/AndroidAuto_Systemizer.zip",
+    "version": "v4.0",
+    "versionCode": 40,
+    "zipUrl": "https://github.com/antoniomalheirs/AndroidAuto_Systemizer/releases/download/V4.0/AndroidAuto_Systemizer.zip",
     "changelog": "https://raw.githubusercontent.com/antoniomalheirs/AndroidAuto_Systemizer/main/update_metada/CHANGELOG.md"
 }

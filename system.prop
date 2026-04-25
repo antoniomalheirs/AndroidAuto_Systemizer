@@ -1,8 +1,16 @@
 # ============================================================================
-# Android Auto Systemizer - system.prop
+# Android Auto Systemizer - system.prop v3.0
 # Propriedades do sistema carregadas via resetprop
 # ============================================================================
 
-# NOTA: Nenhuma propriedade customizada é necessária para o Android Auto
-# funcionar como priv-app. As permissões privilegiadas do XML são suficientes.
-# Este arquivo está intencionalmente vazio para evitar conflitos.
+# PROTEÇÃO ANTI-BOOTLOOP:
+# Quando ro.control_privapp_permissions=enforce (padrão desde Android 9),
+# o system_server CRASHA (bootloop) se uma permissão listada no XML
+# não existir no Manifest do APK ou não existir naquela versão do Android.
+#
+# Ao definir como "log", o sistema apenas registra o erro no logcat
+# em vez de forçar um crash fatal. Isso garante que o dispositivo
+# SEMPRE inicie, independente de quais permissões existem ou não.
+#
+# Referência: source.android.com/docs/core/permissions/perms-allowlist
+ro.control_privapp_permissions=log
